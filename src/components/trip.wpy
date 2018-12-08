@@ -1,0 +1,111 @@
+<style lang="less" scoped>
+    @gray_font_333: #333;
+    @gray_font_666: #666;
+    @gray_font_999: #999;
+    .trip{
+        width: 100%;
+        padding: 18rpx 30rpx;
+        background-color: #fff;
+        border-bottom: 1px solid #eee;
+        .trip_header{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: @gray_font_999;
+            font-size: 28rpx;
+            .trip_header_user{
+                display: flex;
+                align-items: center;
+                image{
+                    width: 46rpx;
+                    height: 46rpx;
+                    border-radius: 50%;
+                    border: 1px solid #ddd;
+                    margin-right: 15rpx;
+                }
+            }
+        }
+        .trip_location, .trip_time{
+            color: @gray_font_333;
+            padding: 15rpx 0 15rpx 64rpx;
+            display: flex;
+            font-size: 30rpx;
+            > text{
+                flex: 0 0 auto;
+            }
+            > view{
+                flex: 1 1 auto;
+                display: flex;
+                flex-wrap: wrap;
+            }
+            .location_item{
+                flex: 0 0 auto;
+                border: 1px solid #ddd;
+                padding: 0rpx 10rpx;
+                margin-left: 20rpx;
+                margin-bottom: 10rpx;
+                border-radius: 6rpx;
+            }
+        }
+        .trip_time{
+            margin-top: -15rpx;
+            position: relative;
+            .trip_time-value{
+                display: inline-block;
+                margin-left: 20rpx;
+            }   
+        }
+        .trip_status{
+            position: absolute;
+            right :0rpx;
+        }
+    }
+</style>
+<template>
+    <navigator url="/pages/trip?tripId={{tripId}}">
+        <view class="trip">
+            <view class="trip_header">
+                <navigator url="/pages/user?userId={{userId}}" @tap.stop="goToUser">
+                    <view class="trip_header_user">
+                        <image src="{{userImg}}" />
+                        <text>{{userName}}</text>
+                    </view> 
+                </navigator>
+                <text class="trip_create_time">{{createTime}}</text>
+            </view>
+            <view class="trip_location">
+                <text>目的地:</text>
+                <view>
+                    <repeat for="{{location}}">
+                        <text class="location_item">{{item}}</text>
+                    </repeat>
+                </view>
+            </view>
+            <view class="trip_time">
+                <text>时间:</text>
+                <text class="trip_time-value">{{startTime + '~' + endTime}}</text>
+                <text class='trip_status' wx:if="{{sponsorStart == 0}}">申请中</text>
+                <text class='trip_status' wx:elif="{{sponsorStart == 1}}">已参团</text>
+                <text class='trip_status' wx:elif="{{sponsorStart == 2}}">已拒绝</text>
+                <text class='trip_status' wx:elif="{{sponsorStart == 3}}">已退出</text>
+            </view>
+        </view>
+    </navigator>  
+</template>
+<script>
+    import wepy from 'wepy';
+
+    export default class Trip extends wepy.component {
+        props = {
+            tripId: String, //行程id
+            userId: String, //用户id
+            userImg: String, //用户头像
+            userName: String, //用户名称
+            createTime: String, //创建时间
+            location: Array, //目的地
+            startTime: String, //开始时间
+            endTime: String, //结束时间
+            sponsorStart:String,//发起状态
+        };
+    }
+</script>

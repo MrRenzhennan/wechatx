@@ -1,0 +1,442 @@
+<style lang="less">
+.container {
+  position: relative;
+}
+view {
+  box-sizing: border-box;
+}
+.index-swiper {
+  width: 100%;
+  height: 150px;
+  position: relative;
+  box-sizing: border-box;
+}
+.search-box {
+  width: 690rpx;
+  position: absolute;
+  top: 8rpx;
+  left: 30rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  border-radius: 8rpx;
+  background-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 8rpx rgba(0, 0, 0, 0.3);
+  input {
+    height: 60rpx;
+    line-height: 60rpx;
+    font-size: 24rpx;
+    color: #fff;
+    padding-right: 10rpx;
+    padding-left: 60rpx;
+  }
+  .search-icon {
+    position: absolute;
+    top: 12rpx;
+    left: 12rpx;
+    font-weight: bold;
+  }
+  .sug_info {
+    background-color: #eeeeee;
+    .sug_info_item {
+      font-size: 24rpx;
+      color: #333;
+      padding: 10rpx 20rpx;
+    }
+  }
+}
+.trip-list {
+  box-sizing: border-box;
+  background-color: #ddd;
+  width: 100%;
+}
+.banner {
+  width: 100%;
+  height: 350rpx;
+  image {
+    width: 100%;
+  }
+}
+.upper_tip {
+  width: 100%;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  background-color: transparent;
+  color: #ddd;
+  font-size: 30rpx;
+}
+.pub-btn {
+  position: fixed;
+  bottom: 100rpx;
+  right: 30rpx;
+  width: 90rpx;
+  height: 90rpx;
+  line-height: 90rpx;
+  text-align: center;
+  border-radius: 50%;
+  border: 1px solid rgba(18, 199, 211, 0.8);
+  background-color: rgba(18, 199, 211, 0.8);
+  color: rgba(248, 248, 248, 1);
+  font-size: 30rpx;
+  box-shadow: 0 0 10rpx rgba(0, 0, 0, 0.8);
+  &:active {
+    background-color: rgba(18, 199, 211, 1);
+  }
+}
+</style>
+<template>
+  <view class="container">
+    <scroll-view scroll-y style="height: {{viewHeight+'px'}}" lower-threshold="30" bindscrolltolower="loadMoreTrip">
+      <swiper class="banner" indicator-dots="{{indicatorDots}}" autoplay="{{autoplay}}" interval='{{interval}}' duration="{{duration}}">
+        <block wx:for="{{imgUrls}}" wx:key="key">
+          <swiper-item>
+            <image src="{{item}}" class="slide-image" width="375" height="195" mode="scaleToFill"/>
+          </swiper-item>
+        </block>
+      </swiper>
+      <view class="search-box">
+        <icon class="search-icon" type="search" size="20" color="#FFFFFF"/>
+        <input confirm-type="search" value="{{searchValue}}" placeholder-style="color:#FFFFFF" bindconfirm="search" placeholder="关键字查询" bindinput="bindKeyInput"/>
+        <view class="sug_info"> 
+          <repeat for="{{sugData}}" key="index" index="index" item="item">
+            <view class="sug_info_item" @tap.stop="handleSearch" data-name="{{item.name}}">{{item.name}}</view>
+          </repeat>
+        </view>
+      </view>
+      <view class="trip-list">
+        <repeat for="{{tripList}}" key="key">
+          <Trip 
+            :userId="item.publish_user_id"
+            :userName="item.publish_user_wx_name"
+            :userImg="item.publish_user_wx_portriat"
+            :createTime="item.trip_create_time"
+            :location="item.trip_end_location"
+            :startTime="item.trip_start_time"
+            :endTime="item.trip_end_time"
+            :tripId="item.trip_id"
+            />
+        </repeat>
+      </view>
+      <view class="upper_tip">
+        <text>{{upperMsg}}</text>
+      </view>
+    </scroll-view>
+    <navigator url="/pages/publish">
+      <view class="pub-btn" >
+        <text>发布</text>
+      </view>
+    </navigator>  
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import Trip from "../components/trip";
+import bmap from "../libs/bmap-wx.js";
+import HttpService from "../util";
+import Api from "../api";
+
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: '与我同行',
+      enablePullDownRefresh: false,
+    }
+    components = {
+        Trip
+    }
+    selfData = {
+      keyword: '',
+      pageNo: 1, // 当前页
+      pageSize: 10, // 每页的数量
+      count: 35, // 总数据量
+      done: false, // 是否加载完全部数据
+      pending: false, // 是否正在请求分页数据
+      BMap: new bmap.BMapWX({ // 新建百度地图对象
+          ak: "Thbr5LPMtcCxLFpzRhuMHfBzbOzBBDSW"
+      })
+    }
+    data = {
+      canIUse: wepy.canIUse('button.open-type.getUserInfo'),
+      userInfo: null || '暂无数据',
+      imgUrls: [
+        'http://img02.tooopen.com/images/20150928/tooopen_sy_143912755726.jpg',
+        'http://img06.tooopen.com/images/20160818/tooopen_sy_175866434296.jpg',
+        'http://img06.tooopen.com/images/20160818/tooopen_sy_175833047715.jpg'
+      ],
+      indicatorDots: true,
+      autoplay: true,
+      interval: 5000,
+      duration: 1000,
+      tripList: [], // 行程列表数据
+      viewHeight: 500, //信息展示窗口的高度
+      upperMsg: '',
+      keyword: ''
+    }
+    // 控制提示
+    upperControl = {
+      show: (msg) => {
+        this.upperMsg = msg;
+      },
+      hide: () => {
+        this.upperMsg = '';
+      }
+    }
+    methods = {
+      // bindGetUserInfo: function(e) {
+      //   if (e.source.data.userInfo) {
+      //     console.log('用户已经授权！')
+      //   } else {
+      //     console.log('用户按了拒绝按钮')
+      //   }
+      // },
+      // getUserInfo: function() {
+      //   this.$parent.getUserInfo(function(data) {
+      //     console.log(data)
+      //   })
+      // },
+      // 加载更多行程信息
+      loadMoreTrip() {
+        if (this.selfData.pending === false && this.selfData.done === false) {
+          this.selfData.pending = true;
+          this.selfData.pageNo++;
+          this.requestTripList(
+            this.selfData.keyword,
+            this.selfData.pageNo,
+            this.selfData.pageSize,
+            () => {
+              this.selfData.pending = false;
+            }
+          );
+        }
+      },
+      // 搜索
+      search(event) {
+        this.sugData = [];
+        this.$apply();
+        if (this.selfData.pending === false) {
+          this.selfData.pending = true;
+          this.selfData.keyword = event.detail.value
+            .replace(/^\s+/, "")
+            .replace(/\s+$/, "");
+          this.selfData.pageNo = 1;
+          this.requestTripList(
+            this.selfData.keyword,
+            this.selfData.pageNo,
+            this.selfData.pageSize,
+            () => {
+              this.selfData.pending = false;
+            }
+          );
+        }
+      },
+      bindKeyInput: function(e) {
+        // 发起suggestion检索请求
+        this.selfData.BMap.suggestion({
+          query: e.detail.value,
+          region: '北京',
+          city_limit: true,
+          fail: (data) => {
+            console.log(data);
+          },
+          success: (data) => {
+            this.sugData = data.result;
+          }
+        });
+      },
+      handleSearch: function(e) {
+        console.log(e.target.dataset.name);
+        this.sugData = [];
+        var search_keyword = e.target.dataset.name;
+        this.searchValue = search_keyword;
+        this.$apply();
+        this.requestTripList(search_keyword, 1, 10, function() {});
+      }
+    }
+    // 请求行程数据
+    requestTripList(keyword = '', pageNo = 1, pageSize = 10, callback){
+      HttpService.Post({
+            urlName: 'queryTripListByWord',
+            data: {
+                keyword,
+                pageNo,
+                pageSize
+            },
+            success: (code, data, msg) => {
+              /* 查询记录成功 */
+              if(code === 20000){
+                const { count, list } = data;
+                this.selfData.count = count;
+                if(count === 0){
+                  // 暂无数据
+                  this.tripList = [];
+                  this.upperControl.show(`没有搜索到"${keyword}"相关的行程`);
+                }else{
+                  if(pageNo === 1){
+                    // 新查询
+                    this.tripList = list.map((trip)=>{
+                      trip.trip_end_location = JSON.parse(trip.trip_end_location)[0];
+                      return trip;
+                    });
+                    this.upperControl.show('加载中...');
+                  }else{
+                    // 后续的分页查询
+                    this.tripList = [...this.tripList, ...list.map((trip)=>{
+                      trip.trip_end_location = JSON.parse(trip.trip_end_location)[0];
+                      return trip;
+                    })];
+                  }
+                  if(pageNo * pageSize >= this.selfData.count){
+                    this.selfData.done = true;
+                    this.upperControl.show('--- 这是我的底线了 ---');
+                  }else{
+                    this.selfData.done = false;
+                  }
+                }
+                this.$apply();
+              }else{
+              /* 查询记录失败 */
+                if(pageNo === 1){
+                  this.upperControl.show('这里好像有bug');
+                }else{
+                  this.upperControl.show('加载失败');
+                }
+                this.$apply();
+              }
+            },
+            fail: (msg) => {
+              if(pageNo === 1){
+                this.upperControl.show('这里好像有bug');
+              }else{
+                this.upperControl.show('加载失败');
+              }
+              this.$apply();
+            },
+            complete: () => {
+              callback && callback();
+              console.log('请求完成');
+            }
+      });
+    }
+    // 初始化查询
+    initQuery(){
+      this.selfData.keyword = '';
+      this.selfData.pageNo = 1;
+      this.keyword = '';
+      const { keyword, pageNo, pageSize } = this.selfData;
+      this.selfData.pending = true;
+      wx.showLoading({
+        title: '正在加载',
+        mask: true
+      });
+      this.requestTripList(
+        keyword, 
+        pageNo, 
+        pageSize, 
+        () => {
+          this.selfData.pending = false;
+          wx.hideLoading();
+        }
+      );
+    }
+    getUserInfo(cb) {
+      const that = this
+      if (this.$parent.globalData.userInfo != null) {
+        return this.$parent.globalData.userInfo
+      }
+      wepy.getSetting({
+        success: (res) => {
+          console.log(res,res.authSetting['scope.userInfo'])
+          if (res.authSetting['scope.userInfo']) {
+            wepy.getUserInfo({
+              success: (res) => {
+                // console.log(res.userInfo, '用户已经授权过')
+                this.$parent.globalData.userInfo = res.userInfo
+                // console.log('globalData', this.$parent.globalData)
+                cb && cb(res.userInfo)
+              },
+              error: function(err) {
+                console.log(err);
+              }
+            })
+          }else{
+            wx.navigateTo({
+              url: 'login'
+            });
+          }
+        }
+      })
+    }
+  handleLogin(user) {
+    let that = this;
+    console.log(user,this);
+    // 登录
+    wx.login({
+      success: res => {
+        // 发送 res.code 到后台换取 openId, sessionKey, unionId
+        console.log("res",res)
+        wx.request({
+          url: `${Api.base_url}${Api.login}`,
+          method: "POST",
+          data: {
+            code: res.code,
+            userInfo: this.$parent.globalData.userInfo
+          },
+          success: (ress) => {
+            console.log(ress);
+            const data = ress.data;
+            if (data.code != 20000) {
+              wx.removeStorageSync("localToken");
+
+              wx.showModal({
+                title: "",
+                content: "登录后可查看更多项目信息",
+                confirmText: "手机登录",
+                confirmColor: "#fcdb00",
+                success: function(res) {
+                  if (res.confirm) {
+                    wx.navigateTo({
+                      url: "login"
+                    });
+                  }
+                }
+              });
+            } else {
+              wx.removeStorageSync("localToken");
+              console.log("===>",this);
+              this.$parent.globalData.localToken = data.data.token;
+              // wx.setStorageSync("session3rd", data.data.session3rd);
+              wx.setStorageSync("localToken", data.data.token);
+              this.$parent.globalData.isLogin = true;
+              // this.$apply();
+              this.initQuery();
+            }
+          }
+        });
+      }
+    });
+  }
+    onLoad () {
+      this.getUserInfo(this.handleLogin.bind(this));
+      // 表示是否从发布页面返回到当前页面
+      wx.setStorageSync('publishToFresh', 0);
+      // 初始化视图高度
+      this.viewHeight = wx.getSystemInfoSync().windowHeight;
+      // 初始化数据请求
+      console.log(this.$parent.globalData)
+      console.log("index:",this.$parent.globalData.isLogin)
+      // if(this.$parent.globalData.isLogin){
+      //   this.initQuery();
+      // }else {
+      //   wx.navigateTo({
+      //     url: 'login'
+      //   })
+      // }
+    }
+    onShow () {
+      const backAndToFresh = wx.getStorageSync('publishToFresh');
+      if(backAndToFresh === 1){
+        wx.setStorageSync('publishToFresh', 0);
+        this.initQuery();
+      }
+    }
+  }
+</script>

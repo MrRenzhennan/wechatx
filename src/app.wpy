@@ -1,0 +1,215 @@
+<style lang="less">
+@import './style/weui.less';
+@import './style/icon.less';
+view{
+  box-sizing: border-box;
+}
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+</style>
+
+<script>
+import wepy from 'wepy'
+import 'wepy-async-function'
+import HttpService from './util'
+import Api from "./api";
+
+export default class extends wepy.app {
+  config = {
+    pages: [
+        // 'pages/user', // 个人主页
+        // 'pages/publish', // 发布
+        'pages/index', // 首页
+        // 'pages/publish', // 发布
+        // 'pages/index', // 首页
+        'pages/publish', // 发布
+        'pages/trip', // 行程详情
+        'pages/message', // 消息
+        'pages/user', // 个人主页
+        'pages/discovery', // 发现
+        //'pages/my', // 我的
+        'pages/about_us',//关于我们
+        'pages/mySponsor',//我的发起
+        'pages/apply_list', //申请列表页
+        'pages/applicationRecord',//申请记录
+        'pages/myTx',//我的同行
+        'pages/draft',//我的草稿列表页
+        'pages/draft_item',//我的草稿详情页
+        'pages/login'
+    ],
+    window: {
+      backgroundTextStyle: 'light',
+      navigationBarBackgroundColor: '#f8f8f8',
+      navigationBarTitleText: 'WeChat',
+      navigationBarTextStyle: 'black'
+    },
+    tabBar: {
+      color: '#BBBBBB',
+      selectedColor: '#59D3E1',
+      list: [
+        {
+          pagePath: 'pages/index',
+          text: '首页',
+          iconPath: 'images/tabBar/home_x48.png',
+          selectedIconPath: 'images/tabBar/home_press_x48.png'
+        },
+        {
+          pagePath: 'pages/message',
+          text: '消息',
+          iconPath: 'images/tabBar/message_x64.png',
+          selectedIconPath: 'images/tabBar/message_press_x64.png'
+        },
+        {
+          pagePath: 'pages/discovery',
+          text: '发现',
+          iconPath: 'images/tabBar/discovery_x48.png',
+          selectedIconPath: 'images/tabBar/discovery_press_x48.png'
+        },
+        {
+          pagePath: 'pages/about_us',
+          text: '我的',
+          iconPath: 'images/tabBar/my_x48.png',
+          selectedIconPath: 'images/tabBar/my_press_x48.png'
+        }
+      ]
+    },
+    networkTimeout: {
+      request: 10000
+    }
+  }
+
+  globalData = {
+    userInfo: null,
+    // userInfo: {
+    //   uid: 'a019406067d511e89c437132ae595195'
+    // },
+    localToken: null,
+    isLogin: false,
+  }
+
+  constructor() {
+    super()
+    this.use('requestfix')
+  }
+
+  
+
+  sleep(s) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve('promise resolved')
+      }, s * 1000)
+    })
+  }
+
+  async testAsync() {
+    const data = await this.sleep(3)
+    console.log(data)
+  }
+
+  pageSign(){
+    console.log('我是pagesign')
+    // HttpService.Post({
+    //   userName:'pageSign',
+    //   data:{
+    //     platform:'wechat',
+    //     uid:"123",
+    //     page:'123'
+    //   }
+    // })
+  }
+
+  getUserInfo(cb) {
+    console.log(cb);
+    const that = this
+    if (this.globalData.userInfo != null) {
+      return this.globalData.userInfo
+    }
+    wepy.getSetting({
+      success: function(res) {
+        console.log(res,res.authSetting['scope.userInfo'])
+        if (res.authSetting['scope.userInfo']) {
+          wepy.getUserInfo({
+            success: function(res) {
+              console.log(res.userInfo, '用户已经授权过')
+              that.globalData.userInfo = res.userInfo
+              console.log('globalData', that.globalData)
+              cb && cb(res.userInfo)
+            },
+            error: function(err) {
+              console.log(err);
+            }
+          })
+        }else{
+          wx.navigateTo({
+            url: 'login'
+          });
+        }
+      }
+    })
+  }
+  handleLogin(user) {
+    let that = this;
+    console.log(user,this);
+    // 登录
+    wx.login({
+      success: res => {
+        // 发送 res.code 到后台换取 openId, sessionKey, unionId
+        console.log("res",res)
+        wx.request({
+          url: `${Api.base_url}${Api.login}`,
+          method: "POST",
+          data: {
+            code: res.code
+          },
+          success: (ress) => {
+            console.log(ress);
+            const data = ress.data;
+            if (data.code != 20000) {
+              wx.removeStorageSync("localToken");
+
+              wx.showModal({
+                title: "",
+                content: "登录后可查看更多项目信息",
+                confirmText: "手机登录",
+                confirmColor: "#fcdb00",
+                success: function(res) {
+                  if (res.confirm) {
+                    wx.navigateTo({
+                      url: "login"
+                    });
+                  }
+                }
+              });
+            } else {
+              wx.removeStorageSync("localToken");
+              console.log("===>",this);
+              // this.$parent.globalData.userInfo = data.data.user;
+              // this.$parent.globalData.project_collect = data.data.project_collect;
+              this.globalData.localToken = data.data.token;
+              // wx.setStorageSync("session3rd", data.data.session3rd);
+              wx.setStorageSync("localToken", data.data.token);
+              this.globalData.isLogin = true;
+              // this.$apply();
+            }
+          }
+        });
+      }
+    });
+  }
+  onLoad() {
+    // console.log("-----")
+    // this.getUserInfo(this.handleLogin);
+  }
+  onLaunch() {
+     console.log("-----")
+    // this.getUserInfo(this.handleLogin.bind(this));
+  }
+}
+</script>

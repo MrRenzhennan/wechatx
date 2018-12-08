@@ -1,0 +1,373 @@
+<style lang="less">
+.inline-box {
+  padding: 20rpx 20rpx;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-content: center;
+  flex-wrap: wrap;
+  font-size: 32rpx;
+  border-bottom: 1px solid #ddd;
+  .input-title {
+    color: #333;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    image {
+      width: 45rpx;
+      height: 45rpx;
+    }
+    text {
+      margin-left: 10rpx;
+    }
+  }
+  .input-value {
+    color: #999;
+    .add-region {
+      width: 100%;
+      height: 45rpx;
+      color: #333;
+      text-align: center;
+      line-height: 40rpx;
+      font-size: 36rpx;
+      color: rgba(18, 199, 211, 1);
+      background-color: rgba(248, 248, 248, 1);
+      border-radius: 8rpx;
+    }
+    .end-location {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      flex-wrap: wrap;
+      > view {
+        flex: 0 0 auto;
+        border: 1px solid #ddd;
+        padding: 5rpx 10rpx;
+        margin-right: 20rpx;
+        margin-bottom: 10rpx;
+        border-radius: 6rpx;
+      }
+      image {
+        width: 45rpx;
+        height: 45rpx;
+        margin-left: 10rpx;
+      }
+    }
+
+    .desc-textarea {
+      font-size: 30rpx;
+      border: 1px solid rgba(248, 248, 248, 1);
+      border-radius: 8rpx;
+      height: 200rpx;
+      width: 100%;
+      padding: 10rpx 15rpx;
+    }
+    .desc-textarea-placeholder {
+      color: #ddd;
+    }
+  }
+}
+.input-ellipsis {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 90rpx;
+  image {
+    width: 45rpx;
+    height: 45rpx;
+    margin-left: 10rpx;
+    margin-top: 15rpx;
+  }
+}
+.pub-btn {
+  position: fixed;
+  bottom: 0rpx;
+  left: 0rpx;
+  width: 100%;
+  background-color: rgba(18, 199, 211, 1);
+  color: #fff;
+  border-radius: 8rpx;
+  &:active {
+    background-color: rgb(20, 176, 187, 1);
+  }
+}
+</style>
+<template>
+    <view class="container">
+        <view class="inline-box">
+            <view class="input-title">
+              <image src="{{travel_data.publish_user_wx_portriat}}"/>
+              <text>{{travel_data.publish_user_wx_name}}</text>
+            </view>
+            <view class="input-value">
+              <text>{{travel_data.trip_create_time}}</text>
+            </view>
+        </view>
+         <view class="inline-box">
+            <view class="input-title">
+              <!-- <image src="{{place_icon}}"/> -->
+              <i class="iconfont tx-biaoji1"/>
+              <text>出发地</text>
+            </view>
+            <view class="input-value">
+              <text>{{travel_data.trip_start_location}}</text>
+            </view>
+        </view>
+        <view class="inline-box" style="padding-bottom: 0;">
+            <view class="input-title" style="width: 100%;">
+              <i class="iconfont tx-biaoji"/>
+              <text>目的地</text>
+            </view>
+            <view class="input-value" style="width: 100%;padding: 10rpx 45rpx;">
+                <view class="end-location">
+                    <repeat for="{{travel_data.trip_end_location}}" key="item">
+                        <view data-index="{{index}}">{{item}}</view>
+                    </repeat>    
+                </view>
+            </view>
+        </view>
+        <view class="inline-box">
+            <view class="input-title">
+              <i class="iconfont tx-riqi"/>
+              <text>出发日期</text>
+            </view>
+            <view class="input-value">
+              <text>{{travel_data.trip_start_time}}</text>
+            </view>
+        </view>
+        <view class="inline-box">
+            <view class="input-title">
+              <i class="iconfont tx-riqi"/>
+              <text>返回日期</text>
+            </view>
+            <view class="input-value">
+              <text>{{travel_data.trip_end_time}}</text>
+            </view>
+        </view>
+        <view class="inline-box">
+            <view class="input-title">
+              <i class="iconfont tx-11"/>
+              <text>最大人数</text>
+            </view>
+            <view class="input-value">
+              <text>{{travel_data.trip_member_count}}</text>
+            </view>
+        </view>
+        <view class="inline-box" style="padding-bottom: 0;">
+            <view class="input-title" style="width: 100%;">
+                <i class="iconfont tx-tonghang"/>
+                <text>参团人数({{travel_data.trip_member_info.length}})</text>
+            </view>
+            <view class="input-value" style="width: 100%;padding: 10rpx 45rpx;">
+                <view class="end-location">
+                    <repeat for="{{travel_data.trip_member_info}}" key="item">
+                        <image data-index="{{index}}" src="{{item.user_wx_portriat}}"/>
+                    </repeat>    
+                </view>
+            </view>
+        </view>
+        <view class="inline-box" style="padding-bottom: 0;">
+            <view class="input-title" style="width: 100%;">
+                <i class="iconfont tx-description"/>
+                <text>约伴要求</text>
+            </view>
+            <view class="input-value" style="width: 100%;padding: 10rpx 45rpx;">
+                <view class="end-location">{{travel_data.trip_other_desc}}</view>
+            </view>
+        </view>
+        <view>
+            <view class="input-ellipsis">
+              <image src='../images/ellipsis_icon.png'/>
+            </view>
+        </view>
+        <view wx:if="{{travel_data.self_trip}}" class="inline-box" style="border:0;padding: 10rpx 10rpx;">
+          <navigator url="/pages/apply_list?id={{travel_data.trip_id}}">
+            <button class="pub-btn">查看申请列表</button>
+          </navigator>
+        </view>
+        <view wx:else class="inline-box" style="border:0;padding: 10rpx 10rpx;">
+
+          <button wx:if="{{travel_data.apply_status_to_add == 0}}" class="pub-btn" data-id="{{travel_data.trip_id}}">已申请</button>
+          <button wx:elif="{{travel_data.apply_status_to_add == 1}}" class="pub-btn" data-id="{{travel_data.trip_id}}">已同意</button>
+          <button wx:elif="{{travel_data.apply_status_to_add == 2}}" class="pub-btn" data-id="{{travel_data.trip_id}}">已被拒绝</button>
+          <button wx:elif="{{travel_data.apply_status_to_add == 3}}" class="pub-btn" @tap.stop="outForGroup" data-id="{{travel_data.trip_id}}">退出</button>
+          <button wx:else class="pub-btn" @tap.stop="applyForGroup" data-id="{{travel_data.trip_id}}">申请参团</button>
+        </view>
+    </view>
+</template>
+<script>
+import wepy from "wepy";
+import HttpService from "../util";
+import Api from "../api";
+
+export default class Trip extends wepy.page {
+  config = {
+    navigationBarTitleText: "约伴详情"
+  };
+  data = {
+    trip_id: '',
+    travel_data: {
+      publish_user_id: "123",
+      publish_user_wx_name: "里斯本",
+      publish_user_wx_portriat: "../images/icon_intro.png",
+      trip_create_time: "2018-02-03",
+      trip_start_location: "北京", //出发地
+      trip_end_location: ["西安", "上海"],
+      trip_start_time: "2018-03-23",
+      trip_end_time: "2018-03-25",
+      trip_member_count: "5",
+      trip_member_info: [
+        { user_id: "111", user_wx_portriat: "../images/icon_intro.png" },
+        { user_id: "111", user_wx_portriat: "../images/icon_intro.png" }
+      ],
+      trip_other_desc: "行程要求",
+      trip_status: "行程状态",
+      trip_id: "行程id号",
+      apply_status_to_add: 99,//0申请中 1同意 2拒绝 3退出
+      self_trip: true
+    },
+    place_icon: "../images/place_icon.png",
+    is_publish_user: false
+  };
+  methods = {
+    applyForGroup() {
+      console.log("申请参团！");
+      HttpService.Post({
+      urlName: "requestJoin",
+      data: {
+        trip_id: this.travel_data.trip_id,
+        publisher_id: this.travel_data.publish_user_id
+      },
+      success: (code, data, msg) => {
+        console.log(code, data, msg);
+        /* 查询记录成功 */
+        if (code === 20000) {
+          console.log(data);
+          // const { count, list } = data;
+         
+          this.$apply();
+        } else {
+          this.upperControl.show("加载失败");
+          this.$apply();
+        }
+      },
+      fail: msg => {
+        wx.showToast({
+          title: msg,
+          icon: "none"
+        });
+        this.upperControl.show("加载失败");
+        this.$apply();
+      },
+      complete: () => {
+        // callback && callback();
+        console.log("请求完成");
+      }
+    });
+    }
+  };
+  // 上滑显示提示
+  upperControl = {
+    show: msg => {
+      this.upperMsg = msg;
+    },
+    hide: () => {
+      this.upperMsg = "";
+    }
+  };
+  requestTripDetail(query, callback) {
+    HttpService.Post({
+      urlName: "queryTripDetail",
+      data: query,
+      success: (code, data, msg) => {
+        console.log(code, data, msg);
+        /* 查询记录成功 */
+        if (code === 20000) {
+          console.log(data);
+          // const { count, list } = data;
+          var trip_member_info = data.trip_member_info;
+          var trip_end_location = data.trip_end_location;
+          var trip_start_location = JSON.parse(data.trip_start_location)[0];
+          this.travel_data = data;
+          this.travel_data.trip_start_location = trip_start_location;
+          this.travel_data.trip_member_info = JSON.parse(trip_member_info);
+          this.travel_data.trip_end_location = JSON.parse(trip_end_location)[0];
+          this.$apply();
+        } else {
+          this.upperControl.show("加载失败");
+          this.$apply();
+        }
+      },
+      fail: msg => {
+        wx.showToast({
+          title: msg,
+          icon: "none"
+        });
+        this.upperControl.show("加载失败");
+        this.$apply();
+      },
+      complete: () => {
+        callback && callback();
+        console.log("请求完成");
+      }
+    });
+  }
+  handleLogin() {
+    const that = this;
+    // 登录
+    wx.login({
+      success: res => {
+        // 发送 res.code 到后台换取 openId, sessionKey, unionId
+        wx.request({
+          url: `${Api.base_url}${Api.login}`,
+          method: "POST",
+          data: {
+            code: res.code
+          },
+          success: function(ress) {
+            // console.log(ress);
+            const data = ress.data;
+            if (data.code != 20000) {
+              wx.removeStorageSync("token");
+
+              wx.showModal({
+                title: "",
+                content: "登录后可查看更多项目信息",
+                confirmText: "手机登录",
+                confirmColor: "#fcdb00",
+                success: function(res) {
+                  if (res.confirm) {
+                    wx.navigateTo({
+                      url: "login"
+                    });
+                  }
+                }
+              });
+            } else {
+              wx.removeStorageSync("token");
+              // this.$parent.globalData.userInfo = data.data.user;
+              // this.$parent.globalData.project_collect = data.data.project_collect;
+              that.$parent.globalData.token = data.data.token;
+              // wx.setStorageSync("session3rd", data.data.session3rd);
+              wx.setStorageSync("token", data.data.token);
+              that.$parent.globalData.isLogin = true;
+              that.$apply();
+            }
+          }
+        });
+      }
+    });
+  }
+  onLoad(option) {
+    // console.log(this.$parent.globalData);
+    // console.log("ddddd", option);
+    this.requestTripDetail({
+        trip_id: option.tripId
+        // user_id: "a019406067d511e89c437132ae595195"
+      });
+    this.trip_id = option.tripId;
+    // this.$apply();
+  }
+}
+</script>
+

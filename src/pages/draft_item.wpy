@@ -1,0 +1,314 @@
+<style lang="less">
+@rpx: 2rpx;
+page {
+    background-color: #f1f1f1;
+}
+.section {
+    font-size: 14px;
+    .section__title {
+        display: flex;
+        justify-content: space-between;
+        padding: 16 * @rpx 41 * @rpx 16 * @rpx 9 * @rpx;
+        box-sizing: border-box;
+        background-color: #fff;
+        border-bottom: 1rpx solid #f1f1f1;
+        line-height: 1.5rem;
+        .left {
+            display: flex;
+            justify-content: flex-start;
+            .icon {
+                width: 20 * @rpx;
+                height: 20 * @rpx;
+            }
+        }
+        .picker {
+            color: #bbb;
+        }
+    }
+    .picker {
+        font-size: 12px;
+    }
+    .right-icon {
+        position: relative;
+    }
+    .right-icon::before {
+        content: "";
+        width: 7 * @rpx;
+        height: 7 * @rpx;
+        border-top: 1px solid #101010;
+        border-right: 1px solid #101010;
+        transform: rotate(45deg);
+        position: absolute;
+        top: 52rpx;
+        right: 30rpx;
+    }
+    .rture_region {
+        width: 100%;
+        padding: 0 41 * @rpx 16 * @rpx 40 * @rpx;
+        background-color: #fff;
+        border-bottom: 1rpx solid #f1f1f1;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        .address {
+            width: 20 * @rpx;
+            height: 20 * @rpx;
+            border: 1rpx solid #101010;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 17 * @rpx;
+            font-size: 16px;
+            margin-left: 20rpx;
+        }
+        input {
+            width: 60 * @rpx;
+            height: 30 * @rpx;
+            //padding: 0 10rpx;
+            //box-sizing: border-box;
+            border: 1px solid #bbb;
+            font-size: 12px;
+            text-align: center;
+            margin-right: 10rpx;
+            margin-bottom: 5rpx;
+        }
+    }
+    .tourDescription {
+        border-bottom: none;
+    }
+    .textarea-wrp textarea {
+        width: 100%;
+        height: 200rpx;
+        background-color: #fff;
+        padding: 0 30rpx;
+        box-sizing: border-box;
+    }
+}
+</style>
+<template>
+    <view class="section">
+        <view class="section__title right-icon">
+            <view class="left">
+                <i class="iconfont tx-biaoji icon" style="margin-right: 12rpx;"></i>
+                <text class="title">出发地</text>
+            </view>
+            <picker mode="region" @change="bindDepartureRegionChange" value="{{departure_region}}">
+                <view class="picker">
+                    {{departure_region[0]}}，{{departure_region[1]}}，{{departure_region[2]}}
+                </view>
+            </picker>
+        </view>
+
+        <view class="section__title tourDescription">
+            <view class="left">
+                <i class="iconfont tx-biaoji icon" style="margin-right: 12rpx;"></i>
+                <text class="title">目的地</text>
+            </view>
+        </view>
+        <view class="rture_region">
+            <!-- <picker mode="region" @change="bindDestinationRegionChange" value="{{destination_region}}">
+                <view class="picker">
+                    {{destination_region[0]}}，{{destination_region[1]}}，{{destination_region[2]}} 
+                </view>
+            </picker> -->
+            <view wx:for="{{addressNumber}}" wx:key="{{}}">
+                <input placeholder="请输入" maxlength="10" @input="addressInput" @blur="addressBlur" />
+            </view>
+            <view class="address" @tap="address"> + </view>
+        </view>
+
+        <view class="section__title right-icon">
+            <view class="left">
+                <i class="iconfont tx-riqi icon" style="margin-right: 12rpx;"></i>
+                <text class="title"> 出发日期</text>
+            </view>
+            <picker mode="date" value="{{setOff_startDate}}" start="{{setOff_startDate}}" @change="bindSetOffStartDateChange">
+                <view class="picker">
+                    {{setOff_startDate}}
+                </view>
+            </picker>
+        </view>
+
+        <view class="section__title right-icon">
+            <view class="left">
+                <i class="iconfont tx-riqi icon" style="margin-right: 12rpx;"></i>
+                <text class="title"> 返回日期</text>
+            </view>
+            <picker mode="date" value="{{setOff_startDate}}" start="{{return_startDate}}" @change="bindReturnStartDateChange">
+                <view class="picker">
+                    {{return_startDate}}
+                </view>
+            </picker>
+        </view>
+
+        <view class="section__title right-icon">
+            <view class="left">
+                <i class="iconfont tx-11 icon" style="margin-right: 12rpx;"></i>
+                <text class="title"> 参团人数</text>
+            </view>
+            <picker bindchange="bindPickerChange" value="{{numberOfparticipants_index}}" range="{{numberOfparticipants}}">
+                <view class="picker">
+                    {{numberOfparticipants[numberOfparticipants_index]}}人
+                </view>
+            </picker>
+        </view>
+
+        <view class="section__title tourDescription right-icon">
+            <view class="left">
+                <i class="iconfont tx-description icon" style="margin-right: 12rpx;"></i>
+                <text class="title"> 行程说明</text>
+            </view>
+        </view>
+        <view class="textarea-wrp">
+            <textarea @input="tourDescription" adjust-position cursor-spacing="200px" />
+        </view>
+
+        <button type="primary" size="{{primarySize}}" loading="{{loading}}" plain="{{false}}" disabled="{{disabled}}" @tap="continueTopublish"> {{buttonText}} </button>
+
+    </view>
+</template>
+<script>
+import wepy from "wepy";
+import HttpService from "../util";
+
+export default class Publish extends wepy.page {
+    config = {
+        navigationBarTitleText: "草稿详情",
+        navigationBarBackgroundColor: "#f1f1f1"
+    };
+    selfData = {};
+    data = {
+        departure_region: ["北京市", "北京市", "朝阳区"],
+        destination_region: [],
+        addressNumber: ["1"],
+        setOff_startDate: this.Format(new Date(), "yyyy-MM-dd"),
+        return_startDate: this.Format(
+            new Date(this.Format(new Date(), "yyyy-MM-dd")).setDate(
+                new Date().getDate() + 1
+            ),
+            "yyyy-MM-dd"
+        ),
+        numberOfparticipants_index: 0,
+        numberOfparticipants: ["1", "2", "3", "4"],
+        tourDescriptionText: "",
+        buttonText: "继续发布",
+        disabled: false,
+        loading: false
+    };
+    onLoad() {
+        wx.request({
+            url: "https://wxtx.ilvdudu.com/v1/queryMyDraftList",
+            data: {
+              "user_id": "a019406067d511e89c437132ae595195",
+              "currentPage": 1,
+              "pageSize": 10
+            },
+            header: {
+                "content-type": "application/json" // 默认值
+            },
+            success: function(res) {
+                console.log(res);
+            }
+        });
+    };
+    methods = {
+        //出发地
+        bindDepartureRegionChange: function(e) {
+            console.log("picker发送选择改变，携带值为", e.detail.value);
+            this.departure_region = e.detail.value;
+        },
+        //目的地
+        // bindDestinationRegionChange: function(e) {
+        //     console.log("picker发送选择改变，携带值为", e.detail.value);
+        //     this.destination_region = e.detail.value;
+        // },
+        address: function() {
+            this.addressNumber.push(`${this.addressNumber.length + 1}`);
+            console.log(this.addressNumber);
+            //this.$apply();
+        },
+        addressInput:function(e){
+            // let text = e.detail.value
+            // console.log(text)
+        },
+        addressBlur:function(e){
+            console.log(e)
+            if(e.detail.value && this.destination_region.indexOf(e.detail.value) == -1){
+                this.destination_region.push(e.detail.value)
+            }
+           
+            console.log(this.destination_region)
+        },
+        //出发日期
+        bindSetOffStartDateChange: function(e) {
+            console.log("picker发送选择改变，携带值为", e.detail.value);
+            this.setOff_startDate = e.detail.value;
+        },
+        //返回日期
+        bindReturnStartDateChange: function(e) {
+            console.log("picker发送选择改变，携带值为", e.detail.value);
+            this.return_startDate = e.detail.value;
+        },
+        //参团人数
+        numberOfparticipantsChange: function(e) {
+            console.log("picker发送选择改变，携带值为", e.detail.value);
+            this.numberOfparticipants_index = e.detail.value;
+        },
+        //行程说明
+        tourDescription: function(e) {
+            this.tourDescriptionText = e.detail.value;
+            console.log(e.detail.value);
+        },
+        //继续发布
+        continueTopublish() {
+            console.log("aaaaaaa");
+            this.buttonText = "发布中";
+            this.disabled = true;
+            this.loading = true;
+            wx.showModal({
+                title: "提示",
+                content: `${this.departure_region},${this.destination_region},${
+                    this.setOff_startDate
+                },${this.return_startDate},${
+                    this.numberOfparticipants[this.numberOfparticipants_index]
+                },${this.tourDescriptionText}`,
+                success: function(res) {
+                    if (res.confirm) {
+                        console.log("用户点击确定");
+                    } else if (res.cancel) {
+                        console.log("用户点击取消");
+                    }
+                }
+            });
+        }
+    };
+
+    //日期格式化
+    Format(date, fmt) {
+        let a = new Date(date);
+        const o = {
+            "M+": a.getMonth() + 1, // 月份
+            "d+": a.getDate(), // 日
+            "h+": a.getHours(), // 小时
+            "m+": a.getMinutes(), // 分
+            "s+": a.getSeconds(), // 秒
+            "q+": Math.floor((a.getMonth() + 3) / 3), // 季度
+            S: a.getMilliseconds() // 毫秒
+        };
+        if (/(y+)/.test(fmt))
+            fmt = fmt.replace(
+                RegExp.$1,
+                (a.getFullYear() + "").substr(4 - RegExp.$1.length)
+            );
+        for (var k in o)
+            if (new RegExp("(" + k + ")").test(fmt))
+                fmt = fmt.replace(
+                    RegExp.$1,
+                    RegExp.$1.length == 1
+                        ? o[k]
+                        : ("00" + o[k]).substr(("" + o[k]).length)
+                );
+        return fmt;
+    }
+}
+</script>
+
